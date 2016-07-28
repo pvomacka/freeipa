@@ -29,13 +29,14 @@ define(['dojo/_base/declare',
         'dojo/on',
         './Menu',
         './DropdownWidget',
+        './NotificationWidget',
         './FacetContainer',
         '../text',
         '../widget',
         'dojo/NodeList-dom'
        ],
        function(declare, array, dom, construct, prop, dom_class,
-                dom_style, query, on, Menu, DropdownWidget,
+                dom_style, query, on, Menu, DropdownWidget, NotificationWidget,
                 FacetContainer, text, widgets) {
 
     /**
@@ -63,6 +64,8 @@ define(['dojo/_base/declare',
         logged_user_node: null,
 
         menu_node: null,
+
+        notification_bar: null,
 
         indicator_node: null,
 
@@ -162,8 +165,6 @@ define(['dojo/_base/declare',
                 'class': 'collapse navbar-collapse navbar-collapse-21'
             }, this.nav_node);
 
-
-
             this.nav_util_tool_node = construct.create('ul', {
                 'class': 'nav navbar-nav navbar-utility'
             }, this.nav_util_node);
@@ -171,6 +172,8 @@ define(['dojo/_base/declare',
             this.password_expires_node = construct.create('li', {
                 'class': 'header-passwordexpires'
             }, this.nav_util_tool_node);
+
+            construct.place(this.notification_bar.render(this.nav_util_node), this.nav_util_tool_node);
 
             var user_toggle = this._render_user_toggle_nodes();
             this.user_menu.set('toggle_content', user_toggle);
@@ -253,6 +256,11 @@ define(['dojo/_base/declare',
                 mode: 'icon',
                 text: text.get('@i18n:status.working', 'Working')
             });
+
+            this.notification_bar = new NotificationWidget({
+                name: 'notification_bar'
+            });
+
             this.user_menu = new DropdownWidget({
                 el_type:  'li',
                 name: 'profile-menu',
