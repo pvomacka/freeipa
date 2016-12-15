@@ -31,6 +31,9 @@ define([
         './_base/Singleton_registry',
         './_base/construct',
         './builder',
+        './facets/Facet',
+        // './facets/HeaderMixin',
+        './FacetState',
         './ipa',
         './jquery',
         './navigation',
@@ -44,8 +47,9 @@ define([
         './field',
         './widget'
        ], function(declare, lang, construct, on, Stateful, Evented,
-                   Singleton_registry, construct_utils, builder, IPA, $,
-                   navigation, phases, reg, rpc, su, text, ActionDropdownWidget) {
+                   Singleton_registry, construct_utils, builder, Facet,
+                   /*HeaderMixin,*/ FacetState, IPA, $, navigation, phases, reg,
+                   rpc, su, text, ActionDropdownWidget) {
 
 /**
  * Facet module
@@ -130,6 +134,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
     spec = spec || {};
 
     var that = IPA.object();
+    // var that = new Facet(spec);
 
     /**
      * Name of preferred facet container
@@ -138,42 +143,49 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @property {string}
      */
     that.preferred_container = spec.preferred_container;
+    // Facet
 
     /**
      * Entity this facet belongs to
      * @property {entity.entity}
      */
     that.entity = IPA.get_entity(spec.entity);
+    // Missing --- Entity Mixin
 
     /**
      * Facet name
      * @property {string}
      */
     that.name = spec.name;
+    // Facet
 
     /**
      * Facet label
      * @property {string}
      */
     that.label = text.get(spec.label);
+    // Facet
 
     /**
      * Facet title
      * @property {string}
      */
     that.title = text.get(spec.title || that.label);
+    // Facet
 
     /**
      * Facet tab label
      * @property {string}
      */
     that.tab_label = text.get(spec.tab_label || that.label);
+    // Facet
 
     /**
      * Facet element's CSS class
      * @property {string}
      */
     that.display_class = spec.display_class;
+    // MISSING
 
     /**
      * Flag. Marks the facet as read-only - doesn't support modify&update
@@ -181,18 +193,21 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @property {boolean}
      */
     that.no_update = spec.no_update;
+    // MISSING
 
     /**
      * Breadcrumb navigation is not displayed when set.
      * @property {boolean}
      */
     that.disable_breadcrumb = spec.disable_breadcrumb;
+    // MISSING -- HeaderMixin
 
     /**
      * Facet tabs are not displayed when set.
      * @property {boolean}
      */
     that.disable_facet_tabs = spec.disable_facet_tabs;
+    // headerMixin
 
     /**
      * Facet tabs in sidebar
@@ -206,24 +221,29 @@ exp.facet = IPA.facet = function(spec, no_init) {
      */
     that.tabs_in_sidebar = spec.tabs_in_sidebar !== undefined ?
         spec.tabs_in_sidebar : false;
+    //headerMixin
 
     /**
      * State object for actions
      * @property {facet.state}
      */
     that.action_state = builder.build('', spec.state || {}, {}, { $factory: exp.state });
+    // ActionMixin
+
 
     /**
      * Collection of facet actions
      * @property {facet.action_holder}
      */
     that.actions = builder.build('', { actions: spec.actions }, {}, { $factory: exp.action_holder } );
+    // ActionMixin
 
     /**
      * Array of actions which are displayed in facet header
      * @property {Array.<string>}
      */
     that.header_actions = spec.header_actions || [];
+    // headerMixin
 
     /**
      * Policies
@@ -233,13 +253,15 @@ exp.facet = IPA.facet = function(spec, no_init) {
         container: that,
         policies: spec.policies
     });
+    // MISSING -- Facet
 
     /**
      * Facet header
      * @property {facet.facet_header}
      */
     that.header = builder.build('',  spec.header || {}, {},
-        { $pre_ops: [{ facet: that }], $factory: IPA.facet_header });
+    { $pre_ops: [{ facet: that }], $factory: IPA.facet_header });
+    // headerMixin
 
     /**
      * Hard override for `needs_update()` logic. When set, `needs_update`
@@ -247,13 +269,14 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @property {boolean}
      */
     that._needs_update = spec.needs_update;
-
+    // MISSING -- HeaderMixin
 
     /**
      * Facet is shown
      * @property {Boolean}
      */
     that.is_shown = false;
+    // MISSING
 
     /**
      * Marks facet as expired - needs update
@@ -264,36 +287,42 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @property {boolean}
      */
     that.expired_flag = true;
+    // MISSING -- Facet
 
     /**
      * Last time when facet was updated.
      * @property {Date}
      */
     that.last_updated = null;
+    // MISSING -- Facet
 
     /**
      * Timeout[s] from `last_modified` after which facet should be expired
      * @property {number} expire_timeout=600
      */
     that.expire_timeout = spec.expire_timeout || 600; //[seconds]
+    // MISSING -- HeaderMixin
 
     /**
      * Raised when facet gets updated
      * @event
      */
     that.on_update = IPA.observer();
+    // MISSING -- Facet
 
     /**
      * Raised after `load()`
      * @event
      */
     that.post_load = IPA.observer();
+    // MISSING -- Facet --- MAYBE OWN MIXIN FIXME
 
     /**
      * Dialogs
      * @property {ordered_map}
      */
     that.dialogs = $.ordered_map();
+    // MISSING
 
     /**
      * dom_node of container
@@ -301,6 +330,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @property {jQuery}
      */
     that.container_node = spec.container_node;
+    // Facet
 
     /**
      * dom_node which contains all content of a facet.
@@ -309,6 +339,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @property {jQuery}
      */
     that.dom_node = null;
+    // Facet
 
     /**
      * Facet groups
@@ -320,12 +351,14 @@ exp.facet = IPA.facet = function(spec, no_init) {
     that.facet_groups = builder.build('', spec.facet_groups, {}, {
         $factory: IPA.facet_group
     });
+    // HeaderMixin
 
     /**
      * Facet group name
      * @property {string}
      */
     that.facet_group = spec.facet_group;
+    // HeaderMixin
 
     /**
      * Redirection target information.
@@ -336,6 +369,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @param {string} facet facet name
      */
     that.redirect_info = spec.redirect_info;
+    // Facet -- FIXME: maybe own mixin
 
     /**
      * Name of containing facet of containing entity
@@ -345,19 +379,21 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @property {string}
      */
     that.containing_facet = spec.containing_facet;
-
+    // MISSING -- Facet
 
     /**
      * Facet requires authenticated user
      * @type {Boolean}
      */
     that.requires_auth = spec.requires_auth !== undefined ? spec.requires_auth : true;
+    // Facet
 
     /**
      * Public state
      * @property {facet.FacetState}
      */
     that.state = new FacetState();
+    //Facet
 
 
     /**
@@ -366,6 +402,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @type {String}
      */
     that.primary_key_name = spec.primary_key_name;
+    // MISSING -- TableFacet FIXME
 
     that.get_full_name = function() {
         if (that.entity) {
@@ -373,6 +410,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         }
         return that.name;
     };
+    // Facet - without entity
 
     /**
      * Set and normalize pkeys. Merges with existing if present. If keys length
@@ -383,6 +421,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         pkeys = that.get_pkeys(pkeys);
         that.state.set('pkeys', pkeys);
     };
+    // MISSING
 
     /**
      * Return THE pkey of this facet. Basically the last one of pkeys list.
@@ -390,12 +429,13 @@ exp.facet = IPA.facet = function(spec, no_init) {
      * @return {string} pkey
      */
     that.get_pkey = function() {
-        var pkeys = that.get_pkeys();
+        var pkeys = this.get_pkeys();
         if (pkeys.length) {
             return pkeys[pkeys.length-1];
         }
         return '';
     };
+    // MISSING -- EntityMixin
 
     /**
      * Gets copy of pkeys list.
@@ -439,6 +479,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
 
         return new_keys;
     };
+    // MISSING -- EntityMixin
 
     /**
      * Get pkey prefix.
@@ -452,6 +493,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
 
         return pkeys;
     };
+    // MISSING -- EntityMixin
 
     /**
      * Checks if two objects has the same properties with equal values.
@@ -496,6 +538,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         diff = diff || check_diff(b,a, checked);
         return diff;
     };
+    // Facet
 
     /**
      * Reset facet state to supplied
@@ -509,6 +552,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         }
         that.state.reset(state);
     };
+    // Facet
 
     /**
      * Get copy of current state
@@ -518,6 +562,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
     that.get_state = function() {
         return that.state.clone();
     };
+    // Facet
 
     /**
      * Merges state into current and notifies it.
@@ -531,6 +576,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         }
         that.state.set(state);
     };
+    // Facet
 
     /**
      * Handle state set
@@ -540,6 +586,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
     that.on_state_set = function(old_state, state) {
         that._on_state_change(state);
     };
+    // Facet
 
 
     /**
@@ -573,6 +620,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
             that.refresh();
         }
     };
+    // Facet -- minimalistic
 
     /**
      * Fires `facet-state-change` event with given state as event parameter.
@@ -587,6 +635,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
             state: state
         });
     };
+    // Facet
 
     /**
      * Get dialog with given name from facet dialog collection
@@ -597,6 +646,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
     that.get_dialog = function(name) {
         return that.dialogs.get(name);
     };
+    // MISSING --- new mixin for dialog
 
     /**
      * Add dialog to facet dialog collection
@@ -607,6 +657,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         that.dialogs.put(dialog.name, dialog);
         return that;
     };
+    // MISSING
 
     /**
      * Create facet's HTML representation
@@ -634,7 +685,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
             error: 'Can\'t create facet. No container node defined.'
         };
         var node = dom_node[0];
-        construct.place(node,that.container_node);
+        construct.place(node, that.container_node);
 
         var row = $('<div/>', {
             'class': 'row'
@@ -657,7 +708,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
                 'class': exp.sidebar_class  + exp.sidebar_width
             }).appendTo(row);
         }
-        dom_node.addClass(that.display_class);
+        dom_node.addClass(that.display_class); // not moved
 
         that.header_container = $('<div/>', {
             'class': 'facet-header col-sm-12'
@@ -676,6 +727,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         dom_node.removeClass('active-facet');
         that.policies.post_create();
     };
+    // HeaderMixin and Facet
 
     /**
      * Create facet header
@@ -699,6 +751,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
             'class': 'facet-controls-right'
         }).appendTo(that.controls);
     };
+    // HeaderMixin
 
     /**
      * Create content
@@ -709,6 +762,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
      */
     that.create_content = function(container) {
     };
+    // MISSING
 
     /**
      * Create control buttons
@@ -722,6 +776,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
             that.control_buttons.create(container);
         }
     };
+    // HeaderMixin
 
     that.create_action_dropdown = function(container) {
         if (that.action_dropdown && that.header_actions && that.header_actions.length > 0) {
@@ -729,6 +784,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
             container.append(dropdown);
         }
     };
+    // HeaderMixin
 
     /**
      * Display or hide facet tabs - either in sidebar or facet header
@@ -746,6 +802,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         }
         that.header.set_tabs_visible(visible);
     };
+    // HeaderMixin
 
     /**
      * Update h1 element in title container
@@ -792,6 +849,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
             that.refresh();
         }
     };
+    // Facet
 
     /**
      * Show content container and hide error container.
@@ -803,6 +861,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         that.content.css('display', 'block');
         that.error_container.css('display', 'none');
     };
+    // MISSING -- Facet
 
     /**
      * Show error container and hide content container.
@@ -814,6 +873,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         that.content.css('display', 'none');
         that.error_container.css('display', 'block');
     };
+    // MIssing
 
     /**
      * Check if error is displayed (instead of content)
@@ -824,6 +884,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         return that.error_container &&
                     that.error_container.css('display') === 'block';
     };
+    // MISSING -- Facet
 
     /**
      * Un-mark itself as active facet
@@ -835,6 +896,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         }
         that.dom_node.removeClass('active-facet');
     };
+    // Facet
 
     /**
      * Update widget content with supplied data
@@ -844,6 +906,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         that.data = data;
         that.header.load(data);
     };
+    // Missing -- Facet
 
     /**
      * Start refresh
@@ -854,6 +917,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
      */
     that.refresh = function() {
     };
+    // MISSING -- Facet
 
     /**
      * Clear all widgets
@@ -861,6 +925,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
      */
     that.clear = function() {
     };
+    // MISSING -- Facet
 
     /**
      * Check if facet needs update
@@ -902,6 +967,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
 
         return needs_update;
     };
+    // MISSING -- Facet
 
     /**
      * Sets expire flag
@@ -909,6 +975,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
     that.set_expired_flag = function() {
         that.expired_flag = true;
     };
+    // Missing -- Facet
 
     /**
      * Clears `expired_flag` and resets `last_updated`
@@ -917,6 +984,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         that.expired_flag = false;
         that.last_updated = Date.now();
     };
+    //Missing --> Facet
 
     /**
      * Check whether the facet is dirty
@@ -929,6 +997,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
     that.is_dirty = function() {
         return false;
     };
+    // FormMixin --- maybe Facet?
 
     /**
      * Whether we can switch to different facet.
@@ -937,6 +1006,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
     that.can_leave = function() {
         return !that.is_dirty();
     };
+    // Facet (not implemented, needs dirty from FormMixin
 
     /**
      * Get dialog displaying a message explaining why we can't switch facet.
@@ -956,6 +1026,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
 
         return dialog;
     };
+    // Facet -- not implemented
 
     /**
      * Display error page instead of facet content
@@ -1028,6 +1099,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
 
         that.show_error();
     };
+    // MISSING -> Facet
 
     /**
      * Get facet based on `redirect_info` and {@link
@@ -1056,6 +1128,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
 
         return facet;
     };
+    // MISSING -> Facet  -- FIXME: maybe own mixin
 
     /**
      * Redirect to redirection target
@@ -1066,6 +1139,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         if (!facet) return;
         navigation.show(facet);
     };
+    // MISSING -- Facet -- FIXME maybe own mixin
 
     var redirect_error_codes = [4001];
 
@@ -1084,6 +1158,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
             }
         }
     };
+    // MISSING -- Facet -- FIXME maybe own mixin
 
     /**
      * Initialize facet
@@ -1119,6 +1194,7 @@ exp.facet = IPA.facet = function(spec, no_init) {
         that.action_dropdown.init(that);
 
     };
+    // Facet -- not complete
 
     if (!no_init) that.init_facet();
 
@@ -1167,6 +1243,7 @@ exp.simple_facet_header = function(spec) {
      * Facet title widget
      * @property {facet.facet_title} title_widget
      */
+     that.title_widget = spec.title_widget;
 
     /**
      * Initialize facet header
@@ -1321,11 +1398,13 @@ exp.simple_facet_header = function(spec) {
      */
     that.update_summary = function() {
         var summary = that.facet.action_state.summary();
+        // FIXME: not correct,
+        title_widget = that.facet.header.title_widget;
 
         if (summary.state.length > 0) {
             var css_class = summary.state.join(' ');
-            that.title_widget.set_class(css_class);
-            that.title_widget.set_icon_title(summary.description);
+            title_widget.set_class(css_class);
+            title_widget.set_icon_title(summary.description);
         }
     };
 
@@ -1747,6 +1826,8 @@ exp.facet_title = IPA.facet_title = function(spec) {
      */
     that.create = function(container) {
 
+        console.log("create_title")
+
         that.title_container = $('<div/>', {
             'class': 'facet-title'
         }).appendTo(container);
@@ -1781,6 +1862,7 @@ exp.facet_title = IPA.facet_title = function(spec) {
      * @param {string} css_class
      */
     that.set_class = function(css_class) {
+        console.log('set_class');
 
         if (that.css_class) {
             that.title_container.removeClass(that.css_class);
@@ -3523,88 +3605,6 @@ exp.eval_cond = IPA.eval_cond = function(enable_cond, disable_cond, state) {
 
     return true;
 };
-
-/**
- * Facet state
- * @extends Stateful
- * @mixins Evented
- * @class facet.FacetState
- */
-var FacetState = exp.FacetState = declare([Stateful, Evented], {
-
-    /**
-     * Properties to ignore in clear and clone operation
-     */
-    _ignore_properties: {_watchCallbacks:1, onset:1,_updating:1, _inherited:1},
-
-    /**
-     * Gets object containing shallow copy of state's properties.
-     */
-    clone: function() {
-        var clone = {};
-        for(var x in this){
-            if (this.hasOwnProperty(x) && !(x in this._ignore_properties)) {
-                clone[x] = lang.clone(this[x]);
-            }
-        }
-        return clone;
-    },
-
-    /**
-     * Unset all properties.
-     */
-    clear: function() {
-        var undefined;
-        for(var x in this){
-            if (this.hasOwnProperty(x) && !(x in this._ignore_properties)) {
-                this.set(x, undefined);
-            }
-        }
-        return this;
-    },
-
-    /**
-     * Set a property
-     *
-     * Sets named properties on a stateful object and notifies any watchers of
-     * the property. A programmatic setter may be defined in subclasses.
-     *
-     * Can be called with hash of name/value pairs.
-     *
-     * @fires set
-     */
-    set: function(name, value) {
-
-        var old_state;
-        var updating = this._updating;
-        if (!updating) old_state = this.clone();
-        this._updating = true;
-        this.inherited(arguments);
-        if (!updating) {
-            delete this._updating;
-            var new_state = this.clone();
-            this.emit('set', old_state, new_state);
-        }
-
-        return this;
-    },
-
-    /**
-     * Set completely new state. Old state is cleared.
-     *
-     * @fires reset
-     */
-    reset: function(object) {
-        var old_state = this.clone();
-        this._updating = true;
-        this.clear();
-        this.set(object);
-        delete this._updating;
-        var new_state = this.clone();
-        this.emit('set', old_state, new_state);
-        return this;
-    }
-});
 
 // Facet builder and registry
 var registry = new Singleton_registry();
